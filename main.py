@@ -15,31 +15,35 @@ class Mail:
         self.imap = imap_address
         self.smtp = smtp_address
 
-    def send_mail(self, subject, message, *args):
+    def create_letter(self, subject, message, *args):
         recipients = args
-        msg = MIMEMultipart()
-        msg['From'] = self.login
-        msg['To'] = ', '.join(recipients)
-        msg['Subject'] = subject
-        msg.attach(MIMEText(message))
-        ms = smtplib.SMTP(self.smtp, 587)
+        letter = MIMEMultipart()
+        letter['From'] = self.login
+        letter['To'] = ', '.join(recipients)
+        letter['Subject'] = subject
+        letter.attach(MIMEText(message))
+        return letter
+
+    def send_mail(self, subject, message, *args):
+        letter = self.create_letter(subject, message, *args)
+        mail_sender = smtplib.SMTP(self.smtp, 587)
 
         # identify ourselves to SMTP client
-        ms.ehlo()
+        mail_sender.ehlo()
 
         # secure our email with TLS encryption
-        ms.starttls()
+        mail_sender.starttls()
 
         # re-identify ourselves as an encrypted connection
-        ms.ehlo()
+        mail_sender.ehlo()
 
-        ms.login(self.login, self.password)
-        ms.sendmail(self.login, ms, msg.as_string())
+        mail_sender.login(self.login, self.password)
+        mail_sender.sendmail(self.login, args, letter.as_string())
 
-        ms.quit()
+        mail_sender.quit()
 
     def get_mail(self):
-        mail = imaplib.IMAP4_SSL(GMAIL_IMAP)
+        mail = imaplib.IMAP4_SSL(self.imap)
         mail.login(self.login, self.password)
         mail.list()
         mail.select("inbox")
@@ -51,4 +55,4 @@ class Mail:
         raw_email = data[0][1]
         email_message = email.message_from_string(raw_email)
         mail.logout()
-
+        
