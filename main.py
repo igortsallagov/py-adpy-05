@@ -42,17 +42,18 @@ class Mail:
 
         mail_sender.quit()
 
-    def get_mail(self):
-        mail = imaplib.IMAP4_SSL(self.imap)
-        mail.login(self.login, self.password)
-        mail.list()
-        mail.select("inbox")
+    def get_mail(self, header=None):
+        mail_getter = imaplib.IMAP4_SSL(self.imap)
+        mail_getter.login(self.login, self.password)
+        mail_getter.list()
+        mail_getter.select("inbox")
         criterion = '(HEADER Subject "%s")' % header if header else 'ALL'
-        result, data = mail.uid('search', None, criterion)
+        result, data = mail_getter.uid('search', None, criterion)
         assert data[0], 'There are no letters with current header'
         latest_email_uid = data[0].split()[-1]
-        result, data = mail.uid('fetch', latest_email_uid, '(RFC822)')
+        result, data = mail_getter.uid('fetch', latest_email_uid, '(RFC822)')
         raw_email = data[0][1]
         email_message = email.message_from_string(raw_email)
-        mail.logout()
-        
+        mail_getter.logout()
+        return email_message
+    
